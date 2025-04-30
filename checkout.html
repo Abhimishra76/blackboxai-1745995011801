@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Checkout - Daraz Nepal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="bg-gray-50 font-['Roboto'] flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded shadow-md w-full max-w-lg">
+    <h1 class="text-2xl font-bold mb-6 text-center text-red-600">Checkout</h1>
+  <form id="checkout-form" class="space-y-4">
+      <div>
+        <label for="fullName" class="block mb-1 font-semibold">Full Name</label>
+        <input
+          type="text"
+          id="fullName"
+          name="fullName"
+          required
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-600"
+          placeholder="Your full name"
+        />
+      </div>
+      <div>
+        <label for="address" class="block mb-1 font-semibold">Shipping Address</label>
+        <textarea
+          id="address"
+          name="address"
+          required
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-600"
+          placeholder="Your shipping address"
+          rows="3"
+        ></textarea>
+      </div>
+      <div>
+        <label for="phone" class="block mb-1 font-semibold">Phone Number</label>
+        <input
+          type="tel"
+          id="phone"
+          name="phone"
+          required
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-600"
+          placeholder="Your phone number"
+        />
+      </div>
+      <div>
+        <label for="paymentMethod" class="block mb-1 font-semibold">Payment Method</label>
+        <select
+          id="paymentMethod"
+          name="paymentMethod"
+          required
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-600"
+        >
+          <option value="">Select a payment method</option>
+          <option value="cod">Cash on Delivery</option>
+          <option value="khalti">Khalti</option>
+          <option value="card">Credit/Debit Card</option>
+        </select>
+      </div>
+      <div class="flex items-center space-x-2">
+        <input type="checkbox" id="savePaymentInfo" name="savePaymentInfo" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded" />
+        <label for="savePaymentInfo" class="font-medium text-gray-700">Save payment info for future purchases</label>
+      </div>
+      <button
+        type="submit"
+        class="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700 transition"
+      >
+        Place Order
+      </button>
+    </form>
+  </div>
+  <script>
+    // Prefill form if saved payment info exists
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedPaymentInfo = JSON.parse(localStorage.getItem('savedPaymentInfo'));
+      if (savedPaymentInfo) {
+        document.getElementById('fullName').value = savedPaymentInfo.fullName || '';
+        document.getElementById('address').value = savedPaymentInfo.address || '';
+        document.getElementById('phone').value = savedPaymentInfo.phone || '';
+        document.getElementById('paymentMethod').value = savedPaymentInfo.paymentMethod || '';
+        document.getElementById('savePaymentInfo').checked = true;
+      }
+
+      // Check if redirected from eSewa payment success
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('payment') === 'success' && urlParams.get('method') === 'esewa') {
+        alert('Payment successful via eSewa!');
+        // Finalize order after successful payment
+        finalizeOrderAfterPayment();
+      }
+    });
+
+    // Function to calculate delivery charge based on address
+    function calculateDeliveryCharge(address) {
+      if (!address) return 0;
+      const lowerAddress = address.toLowerCase();
+      if (lowerAddress.includes('kathmandu')) {
+        return 65;
+      } else {
+        return 115;
+      }
+    }
+
+    // Function to finalize order after payment success
+    function finalizeOrderAfterPayment() {
+      const paymentInfo = JSON.parse(localStorage.getItem('tempPaymentInfo'));
+      if (!paymentInfo) {
+        alert('No payment info found. Please fill the form again.');
+        return;
+      }
+
+      // Save payment info persistently if user opted in
+      if (document.getElementById('savePaymentInfo').checked) {
+        localStorage.setItem('savedPaymentInfo', JSON.stringify(paymentInfo));
+      }
+
+      alert('Order placed successfully! (This is a prototype, no real orders are processed.)');
+      localStorage.removeItem('cart');
+      localStorage.removeItem('tempPaymentInfo');
+      window.location.href = 'index.html';
+    }
+
+    document.getElementById('checkout-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (localStorage.getItem('isLoggedIn') !== 'true') {
+        alert('Please login or signup to place an order.');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Gather payment info from form
+      const paymentInfo = {
+        fullName: document.getElementById('fullName').value.trim(),
+        address: document.getElementById('address').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        paymentMethod: document.getElementById('paymentMethod').value
+      };
+
+      // Calculate delivery charge
+      const deliveryCharge = calculateDeliveryCharge(paymentInfo.address);
+
+      // Calculate cart total from localStorage
+      const cart = JSON.parse(localStorage.getItem('cart')) || [];
+      let cartTotal = 0;
+      cart.forEach(item => {
+        cartTotal += item.price * item.quantity;
+      });
+
+      // Calculate total amount including delivery charge
+      const totalAmount = cartTotal + deliveryCharge;
+
+      // Save payment info temporarily before payment, including delivery charge and total amount
+      paymentInfo.deliveryCharge = deliveryCharge;
+      paymentInfo.totalAmount = totalAmount;
+      localStorage.setItem('tempPaymentInfo', JSON.stringify(paymentInfo));
+
+      // Show total amount to user for confirmation
+      const confirmMsg = `Your total amount including delivery charge is Rs. ${totalAmount}. Proceed to payment?`;
+      if (!confirm(confirmMsg)) {
+        alert('Order cancelled.');
+        return;
+      }
+
+      // Handle payment method
+      if (paymentInfo.paymentMethod === 'esewa') {
+        // Check if user is logged in to eSewa (simulate check)
+        if (localStorage.getItem('esewaLoggedIn') !== 'true') {
+          alert('Please login to your eSewa account to proceed with payment.');
+          window.location.href = 'login.html';
+          return;
+        }
+        // Redirect to eSewa payment simulation page
+        window.location.href = 'esewa-payment.html';
+      } else if (paymentInfo.paymentMethod === 'khalti' || paymentInfo.paymentMethod === 'card') {
+        const confirmPayment = confirm(`You selected ${paymentInfo.paymentMethod}. Simulate payment now?`);
+        if (confirmPayment) {
+          // Save payment info persistently if user opted in
+          if (document.getElementById('savePaymentInfo').checked) {
+            localStorage.setItem('savedPaymentInfo', JSON.stringify(paymentInfo));
+          } else {
+            localStorage.removeItem('savedPaymentInfo');
+          }
+          alert('Payment successful!');
+          alert('Order placed successfully! (This is a prototype, no real orders are processed.)');
+          localStorage.removeItem('cart');
+          localStorage.removeItem('tempPaymentInfo');
+          window.location.href = 'index.html';
+        } else {
+          alert('Payment cancelled. Order not placed.');
+        }
+      } else {
+        // For Cash on Delivery or other methods, proceed directly
+        if (document.getElementById('savePaymentInfo').checked) {
+          localStorage.setItem('savedPaymentInfo', JSON.stringify(paymentInfo));
+        } else {
+          localStorage.removeItem('savedPaymentInfo');
+        }
+        alert('Order placed successfully! (This is a prototype, no real orders are processed.)');
+        localStorage.removeItem('cart');
+        window.location.href = 'index.html';
+      }
+    });
+  </script>
+</body>
+</html>
