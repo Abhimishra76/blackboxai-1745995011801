@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login - Daraz Nepal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="bg-gray-50 font-['Roboto'] flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+    <h1 class="text-2xl font-bold mb-6 text-center text-red-600">Login to Daraz Nepal</h1>
+    <form id="login-form" class="space-y-4">
+      <div>
+        <label for="email" class="block mb-1 font-semibold">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-600"
+          placeholder="you@example.com"
+        />
+      </div>
+      <div>
+        <label for="password" class="block mb-1 font-semibold">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          required
+          class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-600"
+          placeholder="********"
+        />
+      </div>
+      <button
+        type="submit"
+        class="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700 transition"
+      >
+        Login
+      </button>
+    </form>
+    <p class="mt-4 text-center text-gray-600">
+      Don't have an account?
+      <a href="signup.html" class="text-red-600 hover:underline">Sign up</a>
+    </p>
+  </div>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      // Simulate login success
+      localStorage.setItem('isLoggedIn', 'true');
+      alert('Login successful!');
+      window.location.href = 'index.html';
+    });
+
+    // Show logout button if logged in
+    function updateHeader() {
+      const nav = document.querySelector('nav');
+      if (localStorage.getItem('isLoggedIn') === 'true') {
+        const logoutBtn = document.createElement('button');
+        logoutBtn.textContent = 'Logout';
+        logoutBtn.className = 'ml-4 text-red-600 hover:text-red-800 font-semibold';
+        logoutBtn.addEventListener('click', () => {
+          localStorage.removeItem('isLoggedIn');
+          window.location.href = 'index.html';
+        });
+        nav.appendChild(logoutBtn);
+      }
+    }
+    updateHeader();
+  </script>
+</body>
+</html>
